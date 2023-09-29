@@ -1,17 +1,29 @@
 <?php
 
+namespace Database\Seeders;
+
+use App\Models\ContractType;
 use Illuminate\Database\Seeder;
 
 class ContractTypeSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     *
-     * @return void
-     */
+
     public function run()
     {
-        factory(\App\Models\ContractType::class)->create([
+        $seeds = [
+            ['name' => 'indefinite'],
+            ['name' => 'indefinite_discontinuous'],
+            ['name' => 'temporary'],
+            ['name' => 'obra_servei'],
+            ['name' => 'becari'],
+        ];
+
+        ContractType::insert($seeds);
+    }
+}
+
+/*
+  factory(\App\Models\ContractType::class)->create([
             "name" => "indefinite"
         ]);
         factory(\App\Models\ContractType::class)->create([
@@ -27,5 +39,4 @@ class ContractTypeSeeder extends Seeder
         factory(\App\Models\ContractType::class)->create([
             "name" => "becari"
         ]);
-    }
-}
+*/
