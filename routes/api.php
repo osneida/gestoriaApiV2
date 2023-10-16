@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\CertificateController;
 use App\Http\Controllers\Api\PayrollController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
