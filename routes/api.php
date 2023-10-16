@@ -3,58 +3,57 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 
-
 Route::post('authenticate', [AuthController::class, 'login']);
+Route::post('forgot_password', [AuthController::class, 'forgotPassword']); 
+Route::post('reset_password', [AuthController::class, 'resetPassword']); 
 
-//Route::post('user/password', [AuthController::class, 'changeAuthUserPassword']);
- 
+//Route::post('reset_password', 'Api\\AuthController@resetPassword');
 
-Route::post('forgot_password', 'Api\\AuthController@forgotPassword');
-Route::post('reset_password', 'Api\\AuthController@resetPassword');
 Route::get('phpinfo', function () {
-    phpinfo();
+  phpinfo();
 });
 
 
-
 Route::group(
-    
+
     ['middleware' => ['auth.jwt']],
     function () {
-        Route::post('logout', [AuthController::class, 'logout']);
-
         Route::group(['prefix' => 'user'], function () {
-
+            Route::post('logout', [AuthController::class, 'logout']);
             Route::post('/',  [AuthController::class, 'store']);
             Route::get('/', [AuthController::class, 'getAuthUser']);
             Route::get('/userinfo', [AuthController::class, 'getUserInfo']);
             Route::post('/password', [AuthController::class, 'changeAuthUserPassword']);
             Route::get('/auth/company/rol', [AuthController::class, 'getCompanyRolAuthUser']);
+            Route::get('/paginated-for-report', [AuthController::class, 'getUsers']);
+            Route::post('/password/{id}', [AuthController::class, 'resetAuthUserPassword']);
+            Route::get('/company/{company_id}', [AuthController::class, 'getCompanyUsers']);
+            Route::get('/holiday-responsible', [AuthController::class, 'isHolidayResponsible']);
+            // Route::get('/auth/rol', [AuthController::class, 'getRolAuthUser']); //no existe getRolAuthUser
+            Route::get('/{id}', [AuthController::class, 'getUserForUptade']);
+            Route::post('/{id}', [AuthController::class, 'update']);
+            Route::delete('/{id}', [AuthController::class, 'delete']);
+            Route::post('/archive/{id}', [AuthController::class, 'delete']);
+            Route::post('/switch/{id}', [AuthController::class, 'switchUser']);
+
+        });
+
+        Route::group(['prefix' => 'payrolls', "middleware" => "role:1"], function () {
+            Route::post('/upload', [PayrollController::class, 'upload']);
+
         });
     }
+
+    
 );
 
 /*
-Route::group(['middleware' => ['auth.jwt']], function () {
-    Route::post('logout', 'Api\\AuthController@logout');
 
+    Route::group(["prefix" => "payrolls", "middleware" => "role:1"], function () {
+        Route::post('/upload', 'Api\\PayrollController@upload');
+        Route::post('/update', 'Api\\PayrollController@update');
+        Route::post('/delete', 'Api\\PayrollController@delete');
+    });
 
-
-    Route::group(['prefix' => 'user'], function () {
-         
-      
-        Route::post('/', 'Api\\AuthController@store');
-        Route::get('/paginated-for-report', 'Api\\AuthController@getUsers');
-
-        Route::post('/password/{id}', 'Api\\AuthController@resetAuthUserPassword');
-        Route::get('/company/{company_id}', 'Api\\AuthController@getCompanyUsers');
-        Route::get('/holiday-responsible', 'Api\\AuthController@isHolidayResponsible');
-        Route::get('/auth/rol', 'Api\\AuthController@getRolAuthUser');
-        Route::get('/auth/company/rol', 'Api\\AuthController@getCompanyRolAuthUser');
-        Route::get('/{id}', 'Api\\AuthController@getUserForUptade');
-        Route::post('/{id}', 'Api\\AuthController@update');
-        Route::delete('/{id}', 'Api\\AuthController@delete');
-        Route::post('/archive/{id}', 'Api\\AuthController@delete');
-        Route::post('/switch/{id}', 'Api\\AuthController@switchUser');
-      
-    });*/
+    
+*/

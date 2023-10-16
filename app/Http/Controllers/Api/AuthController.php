@@ -204,17 +204,10 @@ class AuthController extends Controller
                 //"company_id" => request("company_id")
             ]);
 
-            $c["user_id"] = $u->id;
-            $c["role"] = "worker";
-            $c["company_id"] = 3;
-
+            foreach (request("companies") as $c) {
+                $c["user_id"] = $u->id;
                 DB::table('users_companies')->insert($c);
-
-
-      //      foreach (request("companies") as $c) {
-               // $c["user_id"] = $u->id;
-              //  DB::table('users_companies')->insert($c);
-          //  }
+            }
 
             $email = app()->environment('production') ? $u->email : env("DEVELOPER_MAIL");
 
