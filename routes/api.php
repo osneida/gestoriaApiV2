@@ -44,6 +44,13 @@ Route::group(
             Route::post('/update', [PayrollController::class, 'update']);
             Route::post('/delete', [PayrollController::class, 'delete']);
         });
+
+        Route::group(['prefix' => 'certificates', "middleware" => "role:1"], function () {
+            Route::post('/upload', [CertificateController::class, 'upload']);
+            Route::post('/update', [CertificateController::class, 'update']);
+        });
+
+
     }
 
     
@@ -58,4 +65,10 @@ Route::group(
     });
 
     
+        Route::group(["prefix" => "certificates", "middleware" => "role:1"], function () {
+        Route::post('/upload', 'Api\\CertificateController@upload');
+        Route::post('/update', 'Api\\CertificateController@update');
+    });
+
+
 */
