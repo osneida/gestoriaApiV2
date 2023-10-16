@@ -77,32 +77,6 @@ Route::group(
 /*
 
 
-    
-    Route::group(["prefix" => "certificates", "middleware" => "role:1"], function () {
-        Route::post('/upload', 'Api\\CertificateController@upload');
-        Route::post('/update', 'Api\\CertificateController@update');
-    });
 
-
-        Route::group(["prefix" => "companies"], function () {
-        Route::get('/', 'Api\\CompanyController@index');
-    });
-
-    Route::group(["prefix" => "companies"], function () {
-        Route::get('/paginated-for-report', 'Api\\CompanyController@paginatedForReport');
-        Route::get('/all-filtered', 'Api\\CompanyController@allFiltered');
-        Route::get('/{id}', 'Api\\CompanyController@show');
-        Route::post('/', 'Api\\CompanyController@store');
-        Route::put('/{id}', 'Api\\CompanyController@update');
-        Route::put('/{id}/active', 'Api\\CompanyController@activeToogle');
-        Route::put('/{id}/workers-acces', 'Api\\CompanyController@workersAccesToogle');
-        Route::put('/{id}/sodexo', 'Api\\CompanyController@sodexoToogle');
-        Route::put('/{id}/worker-hours', 'Api\\CompanyController@workerHoursToogle');
-        Route::put('/{id}/shift-control', 'Api\\CompanyController@shiftControlToogle');
-        Route::put('/{id}/holidays', 'Api\\CompanyController@holidaysToogle');
-        Route::put('/{id}/complaints', 'Api\\CompanyController@complaintsToogle');
-        Route::get('/managers/{id}', 'Api\\CompanyController@getManagers');
-        Route::delete('/work-centers/{id}', 'Api\\CompanyController@destroy');
-    });
 
 */
