@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\PayrollController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 
@@ -40,7 +41,8 @@ Route::group(
 
         Route::group(['prefix' => 'payrolls', "middleware" => "role:1"], function () {
             Route::post('/upload', [PayrollController::class, 'upload']);
-
+            Route::post('/update', [PayrollController::class, 'update']);
+            Route::post('/delete', [PayrollController::class, 'delete']);
         });
     }
 
