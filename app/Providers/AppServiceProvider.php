@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Validator;
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -23,6 +25,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        //
+        Schema::defaultStringLength(191);
+        Validator::extend('unique_period_company', function ($attribute, $value, $parameters, $validator) {
+            $count = DB::table('payroll_periods')->where('period', request("period"))
+                ->where('company_id', (int) request("company_id"))
+                ->count();
+            return $count === 0;
+        }, "Aquest període per aquest empresa ja està processat");
     }
 }
