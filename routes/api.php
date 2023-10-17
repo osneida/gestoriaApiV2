@@ -1,7 +1,10 @@
 <?php
 
 use App\Http\Controllers\Api\CertificateController;
+use App\Http\Controllers\Api\ContractController;
 use App\Http\Controllers\Api\PayrollController;
+use App\Http\Controllers\Api\SalaryController;
+use App\Http\Controllers\Api\WorkerController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CompanyController;
@@ -68,6 +71,26 @@ Route::group(
             Route::get('managers/{id}',  [CompanyController::class, 'getManagers']);
             Route::delete('/work-centers/{id}',  [CompanyController::class, 'destroy']);
         });
+
+        Route::group(['prefix' => 'workers'], function () {
+            Route::get('/paginated-for-report', [WorkerController::class, 'paginatedForReport']);
+            Route::get('/all-filtered', [WorkerController::class, 'allFiltered']);
+            Route::get('/all-filtered/vacation/{id}', [WorkerController::class, 'allFilteredVacation']);
+            Route::get('/all-filtered/working_day', [WorkerController::class, 'allFilteredWorkingDay']);
+            Route::get('/filters-data', [WorkerController::class, 'filtersData']);
+            Route::post('/edit', [WorkerController::class, 'updateMyWorker']); //TODO  //me da error
+            Route::post('/holiday-responsible', [WorkerController::class, 'updateHolidayResponsible']);  
+
+            //ContractController
+            Route::post('/manager-responsible', [ContractController::class, 'updateManagerResponsible']);  
+
+            //SalaryController
+            Route::get('/salary', [SalaryController::class, 'index']);
+            
+
+        });
+
+
     }
 
 
@@ -76,7 +99,36 @@ Route::group(
 
 /*
 
+Route::group(["prefix" => "workers"], function () {
+ 
+    Route::post('/archive/{id}', 'Api\\WorkerController@archiveWorker');
+    Route::get('/salary/all/{id}', 'Api\\SalaryController@getAll');
+    Route::post('/salary/add', 'Api\\SalaryController@store');
+    Route::post('/salary/edit', 'Api\\SalaryController@update');
+    Route::delete('/salary/delete/{id}', 'Api\\SalaryController@destroy');
+    Route::get('/commission', 'Api\\CommissionController@index');
+    Route::post('/commission/add', 'Api\\CommissionController@store');
+    Route::post('/commission/edit', 'Api\\CommissionController@update');
+    Route::delete('/commission/delete/{id}', 'Api\\CommissionController@destroy');
+    Route::get('/retainer', 'Api\\RetainerController@index');
+    Route::post('/retainer/add', 'Api\\RetainerController@store');
+    Route::post('/retainer/edit', 'Api\\RetainerController@update');
+    Route::delete('/retainer/delete/{id}', 'Api\\RetainerController@destroy');
+    Route::get('/{id}/data-for-send-payrolls', 'Api\\WorkerController@dataForSendPayrolls');
+    Route::post('/{id}/send-payrolls-by-email', 'Api\\WorkerController@sendPayrollsByEmail');
+    Route::post('/{id}/send-certificate-by-email', 'Api\\WorkerController@sendCertificateByEmail');
+    Route::get('/{id}/file', 'Api\\WorkerFileController@index');
+    Route::post('/{id}/file', 'Api\\WorkerFileController@store');
+    Route::post('/{id}/file/generate-s3-signed-url', 'Api\\WorkerFileController@generateS3SignedUrl');
+    Route::get('/{id}/file/{filter}', 'Api\\WorkerFileController@getFiltered');
+    Route::post('/{id}/file/{file_id}', 'Api\\WorkerFileController@update');
+    Route::delete('/{id}/file/{file_id}', 'Api\\WorkerFileController@delete');
+    Route::get('/{id}', 'Api\\WorkerController@show');
+    Route::post('/', 'Api\\WorkerController@store');
+    Route::put('/{id}', 'Api\\WorkerController@update');
+    Route::delete('/{id}/{user_id}', 'Api\\WorkerController@destroy');
 
+});
 
 
 */
