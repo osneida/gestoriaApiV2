@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\ContractController;
 use App\Http\Controllers\Api\PayrollController;
 use App\Http\Controllers\Api\RetainerController;
 use App\Http\Controllers\Api\SalaryController;
+use App\Http\Controllers\Api\ShiftControlController;
 use App\Http\Controllers\Api\WorkerController;
 use App\Http\Controllers\Api\WorkerFileController;
 use App\Http\Controllers\Api\WorkerHoursController;
@@ -22,7 +23,6 @@ Route::post('reset_password', [AuthController::class, 'resetPassword']);
 Route::get('phpinfo', function () {
     phpinfo();
 });
-
 
 Route::group(
 
@@ -147,6 +147,17 @@ Route::group(
             Route::post('/{id}', [WorkerHoursController::class,'update']);
             Route::delete('/{id}', [WorkerHoursController::class,'destroy']);
         });
+
+        Route::group(["prefix" => "shift-control"], function () {
+            Route::get('/', [ShiftControlController::class,'index']);
+            Route::get('/day', [ShiftControlController::class, 'indexByDay']);
+            Route::post('/', [ShiftControlController::class,'store']);
+            Route::post('/download', [ShiftControlController::class,'download']);
+            Route::post('/download-general', [ShiftControlController::class,'downloadGeneral']);
+            Route::get('/{id}', [ShiftControlController::class,'show']);
+            Route::post('/{id}', [ShiftControlController::class,'update']);
+            Route::delete('/{id}', [ShiftControlController::class,'destroy']); //TODO no tiene funcion
+        });
     }
 
 
@@ -155,16 +166,6 @@ Route::group(
 
 /*
 
-    Route::group(["prefix" => "shift-control"], function () {
-        Route::get('/', 'Api\\ShiftControlController@index');
-        Route::get('/day', 'Api\\ShiftControlController@indexByDay');
-        Route::post('/', 'Api\\ShiftControlController@store');
-        Route::post('/download', 'Api\\ShiftControlController@download');
-        Route::post('/download-general', 'Api\\ShiftControlController@downloadGeneral');
-        Route::get('/{id}', 'Api\\ShiftControlController@show');
-        Route::post('/{id}', 'Api\\ShiftControlController@update');
-        Route::delete('/{id}', 'Api\\ShiftControlController@destroy');
-    });
 
 
 */
