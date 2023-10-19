@@ -3,6 +3,8 @@
 use App\Http\Controllers\Api\CertificateController;
 use App\Http\Controllers\Api\CommissionController;
 use App\Http\Controllers\Api\ContractController;
+use App\Http\Controllers\Api\DocumentsController;
+use App\Http\Controllers\Api\IrpfController;
 use App\Http\Controllers\Api\PayrollController;
 use App\Http\Controllers\Api\RetainerController;
 use App\Http\Controllers\Api\SalaryController;
@@ -65,6 +67,13 @@ Route::group(
         Route::group(['prefix' => 'certificates', "middleware" => "role:1"], function () {
             Route::post('/upload', [CertificateController::class, 'upload']);
             Route::post('/update', [CertificateController::class, 'update']);
+        });
+
+        Route::group(["prefix" => "certificates", "middleware" => "role:1,2,3"], function () {
+            Route::get('/paginated-for-report', [CertificateController::class, 'index']);
+            Route::get('/all-filtered', [CertificateController::class, 'allFiltered']);
+            Route::post('/generate-s3-signed-url', [CertificateController::class, 'generateS3SignedUrl']);
+            Route::put('/{id}', [CertificateController::class,'markOpened']); //TODO no existe markOpened
         });
 
         Route::group(['prefix' => 'companies'], function () {
@@ -158,6 +167,19 @@ Route::group(
             Route::post('/{id}', [ShiftControlController::class,'update']);
             Route::delete('/{id}', [ShiftControlController::class,'destroy']); //TODO no tiene funcion
         });
+
+        Route::group(["prefix" => "irpf"], function () {
+            Route::get('/', [IrpfController::class, 'index']);
+            Route::post('/', [IrpfController::class, 'update']);
+        });
+
+        Route::group(["prefix" => "documents", "middleware" => "role:1,2,3"], function () {
+            Route::get('/', [DocumentsController::class,'index']);
+            Route::post('/', [DocumentsController::class,'store']); //TODO da error The PutObject operation requires non-empty parameter: Bucket
+            Route::get('/{id}', [DocumentsController::class,'show']);
+            Route::post('/generate-s3-signed-url', [DocumentsController::class,'generateS3SignedUrl']); //TODO error
+            Route::post('/{id}', [DocumentsController::class,'update']);
+        });
     }
 
 
@@ -166,6 +188,110 @@ Route::group(
 
 /*
 
+ 
 
+
+
+
+    Route::group(["prefix" => "settings", "middleware" => "role:1"], function () {
+        Route::get('/', 'Api\\SettingController@index');
+        Route::put('/', 'Api\\SettingController@update');
+    });
+
+    Route::group(["prefix" => "agreements"], function () {
+        Route::get('/all', 'Api\\AgreementController@getAll')->middleware(["role:1"]);
+        Route::get('/', 'Api\\AgreementController@index');
+        Route::post('/', 'Api\\AgreementController@store');
+        Route::get('/list', 'Api\\AgreementController@getList');
+        Route::get('/{id}', 'Api\\AgreementController@show');
+        Route::post('/{id}', 'Api\\AgreementController@update');
+        // Route::delete('/{id}', 'Api\\CompanyController@destroy');
+    });
+    Route::group(["prefix" => "category"], function () {
+
+        Route::get('/{id}', 'Api\\CategoryController@index');
+        Route::post('/', 'Api\\CategoryController@store');
+        Route::post('/{id}', 'Api\\CategoryController@update');
+        Route::delete('/{id}', 'Api\\CategoryController@destroy');
+    });
+    Route::group(["prefix" => "contracts"], function () {
+        Route::group(['middleware' => "role:1,2"], function () {
+            Route::get('/{id}/company/{company_id}', 'Api\\ContractController@dataForComplexForm');
+            Route::post('/', 'Api\\ContractController@store'); // primer contrato
+            Route::put('/{id}', 'Api\\ContractController@update'); // edición
+            Route::post('/{id}/new-contract', 'Api\\ContractController@createNewContract'); // posteriores contratos
+            Route::post('/{id}/modify', 'Api\\ContractController@modificateLastContract');
+            Route::post('/{id}/modify/modification', 'Api\\ContractController@modificationLastContract');
+            Route::post('/{id}/baixa', 'Api\\ContractController@baixaContract');
+            Route::post('/{id}/finiquito', 'Api\\ContractController@finiquitoPayed');
+            Route::post('/manager', 'Api\\ContractController@setManager'); // primer contrato
+        });
+
+        Route::get('/mine', 'Api\\ContractController@mycontracts');
+
+        Route::group(['prefix' => 'holidays'], function () {
+            Route::get('/', 'Api\\HolidaysController@index');
+            Route::get('/agency', 'Api\\HolidaysController@getForAgency');
+            Route::get('/days', 'Api\\HolidaysController@getMyCurrentHolidays');
+            Route::get('/calendar', 'Api\\HolidaysController@calendar');
+            Route::post('/', 'Api\\HolidaysController@store');
+            Route::post('/all', 'Api\\HolidaysController@storeAll');
+            Route::post('/{id}', 'Api\\HolidaysController@update');
+            Route::delete('/{id}', 'Api\\HolidaysController@anulate');
+        });
+    });
+
+    Route::group(['prefix' => 'notifications'], function () {
+        Route::get('/', "Api\\NotificationsController@paginatedForReport");
+        Route::get('/count', "Api\\NotificationsController@getCounts");
+        Route::get('/filters', "Api\\NotificationsController@filterInfo");
+        Route::post('/{id}/read', "Api\\NotificationsController@readNotification");
+    });
+
+    Route::group(['prefix' => 'modifications'], function () {
+        Route::get('/', "Api\\ModificationController@paginatedForReport");
+        Route::get('/filter', "Api\\ModificationController@filterInfo");
+    });
+
+    Route::group(["prefix" => "reports"], function () {
+        Route::get('/', 'Api\\ReportsController@resume');
+        Route::get('/movements-resume', 'Api\\ReportsController@movementsResume');
+        Route::get('/movements-resume-anual', 'Api\\ReportsController@movementsResumeAnual');
+        Route::get('/payrolls', 'Api\\ReportsController@getPayrollsReport');
+        Route::get('/billing', 'Api\\ReportsController@getBillingReport');
+        Route::get('/payrolls/resume', 'Api\\ReportsController@payrollsResume');
+        Route::get('/payrolls/resume-anual', 'Api\\ReportsController@payrollsResumeAnual');
+        Route::get('/active-workers', 'Api\\ReportsController@getActiveWorkers');
+        Route::get('/active-workers/monthly', 'Api\\ReportsController@getActiveWorkersMonthly');
+        Route::get('/inscriptions', "Api\\ReportsController@registerReportNew");
+        Route::get('/updated', "Api\\ReportsController@registerReportUpdated");
+        Route::get('/terminated', "Api\\ReportsController@registerReportTerminated");
+        Route::get('/holidays', "Api\\ReportsController@getHolidays");
+    });
+
+    Route::group(['prefix' => 'complaints'], function () {
+        Route::post('/', 'Api\\ComplaintsController@store');
+    });
+   
+    Route::group(["prefix" => "responsible"], function () {
+        Route::get('/organigram', 'Api\\AuthController@getOrganigram');
+        Route::get('/workers-by-subgestor/{id}', 'Api\\AuthController@getWorkerBySubgestor');
+        Route::get('/holiday/workers/{id}', 'Api\\AuthController@getWorkerByResponsible');
+    });
+    Route::group(["prefix" => "companyrol"], function () {
+        Route::get('/rolgestorsubgestor', 'Api\\AuthController@getGestorSubGestor');
+    });
+    Route::group(["prefix" => "valueportalworker"], function () {
+        Route::get('/portalworker', 'Api\\CompanyController@getPortalWorker');
+    });
+    Route::group(["prefix" => "subgestorname"], function () {
+        Route::get('/subgestor-name', 'Api\\WorkerController@getSubGestorName');
+    });
+    Route::group(["prefix" => "workcenter"], function () {
+        Route::get('/work-center', 'Api\\WorkerController@getWorkCenter');
+        Route::get('/mine', 'Api\\WorkerController@getMyWorkCenter');
+    });
+    Route::get('/api-madrid', 'Api\\AuthController@getApiMadrid');
+});
 
 */
