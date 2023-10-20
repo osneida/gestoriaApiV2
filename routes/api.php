@@ -1,13 +1,18 @@
 <?php
 
+use App\Http\Controllers\Api\AgreementController;
+use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CertificateController;
 use App\Http\Controllers\Api\CommissionController;
 use App\Http\Controllers\Api\ContractController;
 use App\Http\Controllers\Api\DocumentsController;
+use App\Http\Controllers\Api\HolidaysController;
 use App\Http\Controllers\Api\IrpfController;
+use App\Http\Controllers\Api\NotificationsController;
 use App\Http\Controllers\Api\PayrollController;
 use App\Http\Controllers\Api\RetainerController;
 use App\Http\Controllers\Api\SalaryController;
+use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\ShiftControlController;
 use App\Http\Controllers\Api\WorkerController;
 use App\Http\Controllers\Api\WorkerFileController;
@@ -180,6 +185,66 @@ Route::group(
             Route::post('/generate-s3-signed-url', [DocumentsController::class,'generateS3SignedUrl']); //TODO error
             Route::post('/{id}', [DocumentsController::class,'update']);
         });
+
+        Route::group(["prefix" => "settings", "middleware" => "role:1"], function () {
+            Route::get('/', [SettingController::class, 'index']);
+            Route::put('/', [SettingController::class, 'update']);
+        });
+
+        Route::group(["prefix" => "agreements"], function () {
+            Route::get('/all', [AgreementController::class,'getAll'])->middleware(["role:1"]);
+            Route::get('/', [AgreementController::class,'index']);
+            Route::post('/', [AgreementController::class,'store']);
+            Route::get('/list', [AgreementController::class,'getList']);
+            Route::get('/{id}', [AgreementController::class,'show']);
+            Route::post('/{id}', [AgreementController::class,'update']);
+            // Route::delete('/{id}', 'Api\\CompanyController@destroy');
+        });
+
+        Route::group(["prefix" => "category"], function () {
+
+            Route::get('/{id}', [CategoryController::class, 'index']);
+            Route::post('/', [CategoryController::class, 'store']);
+            Route::post('/{id}', [CategoryController::class, 'update']);
+            Route::delete('/{id}', [CategoryController::class, 'destroy']);
+        });
+
+        //por revisar
+
+        Route::group(["prefix" => "contracts"], function () {
+            Route::group(['middleware' => "role:1,2"], function () {
+                Route::get('/{id}/company/{company_id}', [ContractController::class, 'dataForComplexForm']);
+                Route::post('/', [ContractController::class, 'store']); // primer contrato
+                Route::put('/{id}', [ContractController::class, 'update']); // edición
+                Route::post('/{id}/new-contract', [ContractController::class, 'createNewContract']); // posteriores contratos
+                Route::post('/{id}/modify', [ContractController::class, 'modificateLastContract']);
+                Route::post('/{id}/modify/modification', [ContractController::class, 'modificationLastContract']);
+                Route::post('/{id}/baixa', [ContractController::class, 'baixaContract']);
+                Route::post('/{id}/finiquito', [ContractController::class, 'finiquitoPayed']);
+                Route::post('/manager', [ContractController::class, 'setManager']); // primer contrato
+            });
+
+            Route::get('/mine', [ContractController::class,'mycontracts']);
+
+            Route::group(['prefix' => 'holidays'], function () {
+                Route::get('/', [HolidaysController::class,'index']);
+                Route::get('/agency', [HolidaysController::class,'getForAgency']);
+                Route::get('/days', [HolidaysController::class,'getMyCurrentHolidays']);
+                Route::get('/calendar', [HolidaysController::class,'calendar']);
+                Route::post('/', [HolidaysController::class,'store']);
+                Route::post('/all', [HolidaysController::class,'storeAll']);
+                Route::post('/{id}', [HolidaysController::class,'update']);
+                Route::delete('/{id}', [HolidaysController::class,'anulate']);
+            });
+        });
+
+        Route::group(['prefix' => 'notifications'], function () {
+            Route::get('/', [NotificationsController::class,'paginatedForReport']);
+            Route::get('/count', [NotificationsController::class,'getCounts']);
+            Route::get('/filters', [NotificationsController::class, 'filterInfo']);
+            Route::post('/{id}/read', [NotificationsController::class, 'readNotification']);
+        });
+
     }
 
 
@@ -188,32 +253,9 @@ Route::group(
 
 /*
 
- 
 
 
 
-
-    Route::group(["prefix" => "settings", "middleware" => "role:1"], function () {
-        Route::get('/', 'Api\\SettingController@index');
-        Route::put('/', 'Api\\SettingController@update');
-    });
-
-    Route::group(["prefix" => "agreements"], function () {
-        Route::get('/all', 'Api\\AgreementController@getAll')->middleware(["role:1"]);
-        Route::get('/', 'Api\\AgreementController@index');
-        Route::post('/', 'Api\\AgreementController@store');
-        Route::get('/list', 'Api\\AgreementController@getList');
-        Route::get('/{id}', 'Api\\AgreementController@show');
-        Route::post('/{id}', 'Api\\AgreementController@update');
-        // Route::delete('/{id}', 'Api\\CompanyController@destroy');
-    });
-    Route::group(["prefix" => "category"], function () {
-
-        Route::get('/{id}', 'Api\\CategoryController@index');
-        Route::post('/', 'Api\\CategoryController@store');
-        Route::post('/{id}', 'Api\\CategoryController@update');
-        Route::delete('/{id}', 'Api\\CategoryController@destroy');
-    });
     Route::group(["prefix" => "contracts"], function () {
         Route::group(['middleware' => "role:1,2"], function () {
             Route::get('/{id}/company/{company_id}', 'Api\\ContractController@dataForComplexForm');
