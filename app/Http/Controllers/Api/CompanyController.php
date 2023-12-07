@@ -99,17 +99,15 @@ class CompanyController extends Controller
 
     public function update(int $id)
     {
-        
         try {
             DB::beginTransaction();
             $company = Company::find($id);
             if (!$company) {
                 return response()->json(["success" => false], 404);
             }
- 
             $rules = [
-                "name" => 'required|unique:companies,name,'.$id.'|min:2|max:150',
-                "cif" => 'required|unique:companies,cif,'.$id.'|max:20'
+                "name" => 'required|unique:companies,name,' . $id . '|min:2|max:150',
+                "cif" => 'required|unique:companies,cif,' . $id . '|max:20'
             ];
             $validator = Validator::make(request()->all(), $rules);
 
@@ -252,7 +250,7 @@ class CompanyController extends Controller
     
     public function getPortalWorker(){
         $pw = false;
-        $portal = auth()->user()->company()->where('workers_access', 1)->first();
+        $portal = auth()->user()->company()->where('workers_access', 1)->get(); //TODO en la consulta de arriba cambie first por get, osneida
  
         if ($portal){
            $pw = true;

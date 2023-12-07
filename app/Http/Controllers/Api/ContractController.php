@@ -101,8 +101,8 @@ class ContractController extends Controller
      * @return \Illuminate\Http\JsonResponse
      */
     public function store()
-    {   
-        Log::info('mensaje',['data'=> request()->all()]);
+    {
+        Log::info('mensaje', ['data' => request()->all()]);
         if (request()->wantsJson()) {
             $rules = [
                 //"agreement" => 'required|exists:agreements,id',
@@ -188,7 +188,7 @@ class ContractController extends Controller
                     "auto_archive" => false,
                     "work_center_id" => request("work_center"),
                 ]);
-                Log::info('mensaje',['data'=> "LLEGOO 1"]);
+                Log::info('mensaje', ['data' => "LLEGOO 1"]);
                 DB::table("company_worker")->updateOrInsert([
                     "company_id" => $company->id,
                     "worker_id" => $worker->id
@@ -278,7 +278,6 @@ class ContractController extends Controller
      */
     public function update(int $id)
     {
-        Log::info('mensajeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',['data'=> request()->all()]);
         if (request()->wantsJson()) {
             $worker = Worker::find($id);
             $rules = [
@@ -312,6 +311,7 @@ class ContractController extends Controller
 
             try {
                 DB::beginTransaction();
+
                 if (request("company_id")) {
                     $company = Company::where("id", request("company_id"))->first();
                 } else {
@@ -403,13 +403,14 @@ class ContractController extends Controller
                     "holidays_type" => $agreement->holidays_type,
                     "holidays_location" => $company->holidays_location,
                     "temporal_comment" => request("temporal_comment"),
-                    "observations" => request("observations")
+                    "observations" => request("observations"),
                 ];
                 if (request("category") !== 'null') {
                     $contractInput["category_id"] = request("category");
                 }
                 // actualizamos los datos del contrato
                 if (request("contract_id") && request("contract_id") != 'undefined') {
+
                     Contract::find(request("contract_id"))->update($contractInput);
                     if (request("salary") !== 'null')
 
@@ -443,6 +444,26 @@ class ContractController extends Controller
                         "motive" => self::typeMotive(request("mod_type"), false),
                         "start_date" =>  request("contract_start_date"),
                         "editor_id" => auth()->user()->id,
+                    ]);
+                }
+
+                if (request("company_id_old") && request("company_id_old") != 'undefined') {
+                //osneida, para modificar la tabla company_worker
+                if (request("company_id_old") != request("company_id")) {
+                    $workerCompany = DB::table("company_worker")->where("worker_id", $id)
+                                                                ->where("company_id", request("company_id_old"));
+                    $workerCompany->update([
+                        "company_id" => request("company_id")
+                    ]);
+                }
+                }
+
+                if(request("worker_id_replace")){ //osneida para modificar trabajador a quien reemplaza
+                    DB::table("worker_replaces")->updateOrInsert([
+                        "worker_id"         => $id
+                    ],[
+                        "worker_id_replace" => request("worker_id_replace"), //a quien remplaza
+                        "company_id"        => request("company_id"),
                     ]);
                 }
 
@@ -808,7 +829,7 @@ class ContractController extends Controller
      */
     public function createNewContract(int $id)
     {
-        Log::info('mensajeeeeee prueba',['data'=> request()->all()]);
+        Log::info('mensajeeeeee prueba', ['data' => request()->all()]);
         if (request()->wantsJson()) {
             $worker = Worker::find($id);
 
@@ -901,7 +922,7 @@ class ContractController extends Controller
                 $worker->last_name = request("last_name");
                 $worker->email = request("email") != "null" ? request("email") : null;
                 $workCenter = json_decode(request("work_center"), true);
-                Log::info('mensajeeeeee prueba work centerrrrrr',['data'=> $workCenter]);
+                Log::info('mensajeeeeee prueba work centerrrrrr', ['data' => $workCenter]);
                 $worker->work_center_id = $workCenter;
 
                 $worker->archive = false;
@@ -1038,13 +1059,14 @@ class ContractController extends Controller
     }
 
 
-    public function updateManagerResponsible(){
+    public function updateManagerResponsible()
+    {
 
         try {
             $rules = [
                 'workers' => 'required',
                 'manager_responsible' => 'required',
-             
+
             ];
 
 
@@ -1057,20 +1079,34 @@ class ContractController extends Controller
                 ), 422);
             }
 
-            foreach(request("workers") as $worker_id){
-                $contracts = Contract::where('worker_id',$worker_id)->first();
+            foreach (request("workers") as $worker_id) {
+                $contracts = Contract::where('worker_id', $worker_id)->first();
                 $contracts->update([
                     "creator_id" => request("manager_responsible"),
-                   
+
                 ]);
             }
-           
+
 
             return response()->json(["success" => true]);
         } catch (\Exception $exception) {
             return response()->json(["success" => false, "data" => $exception->getMessage()], 400);
         }
-        
+    }
+    public function workerContracts() //osneida
+    {
+        $id = request("worker_id");
+        $select   =[];
+        $select2  =[];
+        $companys = Contract::select('worker_id', 'company_id')->where("worker_id", $id)->with("company")->get();
+        foreach ($companys as $compa) {
+            $select['worker_id']  = $compa->worker_id;
+            $select['company_id'] = $compa->company_id;
+            $select['id']         = $compa->company_id;
+            $select['name']       = $compa->company->name;
 
+            array_push($select2,$select); 
+        }
+        return response()->json(["success" => true, "data" => $select2]);
     }
 }

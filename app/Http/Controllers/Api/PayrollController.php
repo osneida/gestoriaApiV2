@@ -15,6 +15,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Mail\Payrolls;
+use App\Models\WorkerDni;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -26,22 +27,24 @@ class PayrollController extends Controller
 {
     const NIF_REGEX = '/NIF. (\w+)/m';
     const ID_REGEX = '/[0-9A-Z][0-9]{7,7}[A-Za-z]/';
-
+    const NAME_REGEX = '/(\w+)/m';
+  
     protected $processedEachWorkerSuccessfully;
     protected $processedFullPayrollForAgency;
     protected $currentPathForPeriod;
     protected $arrayErrorsOnCheckPayrollFile;
-
+    protected $arrayErrorsworkerIdPayrollFile;
     public function construct()
     {
         $this->processedEachWorkerSuccessfully = false;
         $this->processedFullPayrollForAgency = false;
         $this->arrayErrorsOnCheckPayrollFile = [];
+        $this->arrayErrorsworkerIdPayrollFile = [];
     }
 
     public function paginatedForReport()
     {
-        Log::info('mensaje 5');
+     //   Log::info('mensaje 5');
         if (request()->wantsJson()) {
             $itemsPerPage = (int) request('itemsPerPage');
             $payrolls = Payroll::filtered();
@@ -51,7 +54,7 @@ class PayrollController extends Controller
 
     public function allFiltered()
     {
-        Log::info('mensaje 6');
+      //  Log::info('mensaje 6');
         if (request()->wantsJson()) {
             $payrolls = Payroll::filtered();
             return response()->json(["success" => true, "data" => $payrolls->get()]);
@@ -59,7 +62,7 @@ class PayrollController extends Controller
     }
     public function markOpened(int $id)
     {
-        Log::info('mensaje 4');
+      //  Log::info('mensaje 4');
         if (request()->wantsJson()) {
             try {
                 DB::beginTransaction();
@@ -82,7 +85,7 @@ class PayrollController extends Controller
     }
     public function generateS3SignedUrl()
     {
-        Log::info('mensaje 3');
+      //  Log::info('mensaje 3');
         if (request()->wantsJson()) {
             try {
                 $url = Storage::disk('s3')->temporaryUrl(
@@ -98,7 +101,7 @@ class PayrollController extends Controller
 
     private function setMessages($perdiod)
     {
-        Log::info('mensaje 12');
+       // Log::info('mensaje 12');
         $subject = "Nòmines del mes ";
         $message = "Les nòmines del mes ";
         switch (explode("-", request("period"))[1]) {
@@ -166,11 +169,11 @@ class PayrollController extends Controller
      */
     public function upload()
     {
-        Log::info('mensaje de llegada de payroll ',['data'=>request()->all()]);
+     //   Log::info('mensaje de llegada de payroll ',['data'=>request()->all()]);
         try {
             $rules = [
                 "payroll" => 'required|mimes:pdf|max:10000',
-                'period' => "unique_period_company"
+              //  'period' => "unique_period_company"  //se va ha permitir que se guarden varias nominas con el mismo periodo
             ];
 
             $validator = Validator::make(request()->all(), $rules);
@@ -196,7 +199,18 @@ class PayrollController extends Controller
                 }
 
                 if ($this->processedFullPayrollForAgency) {
-                    return response()->json(["message" => "success"]);
+                    if (count((array) $this->arrayErrorsworkerIdPayrollFile) > 0) {
+
+                        array_unshift($this->arrayErrorsworkerIdPayrollFile, [
+                            sprintf("%s: %s", 'Se procesó la nómina parcialmente, faltó:', '')
+                        ]);
+                        
+                        return response()->json(["message" => "Se procesó la nómina parcialmente, faltó:", "errors" => $this->arrayErrorsworkerIdPayrollFile], 400);
+                    } else {
+
+                        return response()->json(["message" => "success"]);
+                    }
+                   
                 }
             }
         } catch (\Exception $exception) {
@@ -261,12 +275,13 @@ class PayrollController extends Controller
      */
     protected function splitAndValidatePDF(UploadedFile $file)
     {
-        Log::info('mensaje 2');
+    //    Log::info('mensaje 2');
         $filename = $file->getPathname();
 
         $pdf = new Fpdi();
 
         $this->arrayErrorsOnCheckPayrollFile = [];
+        $this->arrayErrorsworkerIdPayrollFile = [];
         //Error found
 
         $parser = new Parser();
@@ -316,7 +331,7 @@ class PayrollController extends Controller
             // Get worker id
             preg_match(self::ID_REGEX, str_replace("\\", "", str_replace(["\n", "\r"], "", $text)), $idMatches);
             //Log::debug($idMatches);
-
+        
             if (empty($idMatches[0])) {
                 array_push($this->arrayErrorsOnCheckPayrollFile, [
                     'El PDF no conté un ID de treballador vàlid'
@@ -332,7 +347,7 @@ class PayrollController extends Controller
                 ]);
                 continue;
             }
-
+            
             if ($company->id !== (int) request("company_id")) {
                 $companySelected = Company::select("name")->find(request("company_id"));
                 array_push($this->arrayErrorsOnCheckPayrollFile, [
@@ -342,10 +357,27 @@ class PayrollController extends Controller
             }
 
             $worker = Worker::whereDni($workerId)->first();
-            if (!$worker) {
-                array_push($this->arrayErrorsOnCheckPayrollFile, [
+
+              if (!$worker) {
+                array_push($this->arrayErrorsworkerIdPayrollFile, [
                     sprintf("%s: %s", 'No s\'ha trobat un treballador amb DNI en aquest arxiu de nòmines', $workerId)
                 ]);
+
+                //guardo en la tabla 
+               // preg_match(self::NAME_REGEX, str_replace("\\", "", str_replace(["\n", "\r"], "", $text)), $name_workers);
+               preg_match(self::NAME_REGEX, $text, $name_workers);
+               // Log::info($text);
+               // Log::info($name_workers);
+
+                WorkerDni::updateOrCreate([
+                    "dni"        => $workerId,
+                    "period"     => request("period"),
+                    "company_id" => request("company_id"),
+                ], [
+                     "name"         => $name_workers[0],
+                     "company_name" => $company->name
+                ]);
+
                 continue;
             }
 
@@ -380,7 +412,7 @@ class PayrollController extends Controller
      */
     public function processEachWorkerPayroll(array $payrollData)
     {
-        Log::info('mensaje 7');
+      //  Log::info('mensaje 7');
         try {
             DB::beginTransaction();
             foreach ($payrollData as $payroll) {
@@ -401,7 +433,7 @@ class PayrollController extends Controller
      */
     protected function processFullPayrollForAgency()
     {
-        Log::info('mensaje 8');
+     //   Log::info('mensaje 8');
         $path = sprintf(
             '%s/%s',
             $this->currentPathForPeriod,
@@ -440,7 +472,7 @@ class PayrollController extends Controller
      */
     private function normalize(string $text): string
     {
-        Log::info('mensaje 9');
+       // Log::info('mensaje 9');
         $text = filter_var($text, FILTER_SANITIZE_STRING);
         $text = preg_replace("/[^A-Za-z0-9 ]/", '', $text);
         $text = str_replace(["\t", "\n"], '', $text);
@@ -459,7 +491,7 @@ class PayrollController extends Controller
 
     public function updateFile($id)
     {
-        Log::info('mensaje 10');
+      //  Log::info('mensaje 10');
         $p = Payroll::where('id', $id)->first();
         $route = "";
         $route_split = explode("/", $p->document_file);

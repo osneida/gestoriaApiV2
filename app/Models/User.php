@@ -188,7 +188,7 @@ class User extends Authenticatable implements JWTSubject
         //Log::info($token);
         $email = app()->environment('production') ? $this->email : env("DEVELOPER_MAIL");
 
-      //  Mail::to($this->email)->send(new ResetPassword($token, $this->email));
+        Mail::to($this->email)->send(new ResetPassword($token, $this->email));
     }
 
 

@@ -15,17 +15,26 @@ class NewUserWorker extends Mailable
     public $user;
     public $mod;
 
+    /**
+     * Create a new message instance.
+     *
+     * @return void
+     */
     public function __construct($user, $password, $mod = false)
     {
+        //
         $this->user = $user;
         $this->password = $password;
         $this->mod = $mod;
     }
 
-
+    /**
+     * Build the message.
+     *
+     * @return $this
+     */
     public function build()
     {
-        // return $this->view('view.name');
         return $this->subject("Usuari acces portal treballador")->view('emails.users.new_worker');
     }
 }

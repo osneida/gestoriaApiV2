@@ -18,6 +18,7 @@ use App\Models\User;
 use App\Models\Worker;
 use App\Models\WorkCenter;
 use App\Models\Salary;
+use App\Models\WorkerReplace;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -87,7 +88,7 @@ class WorkerController extends Controller
     public function store()
     {
         if (request()->wantsJson()) {
-            Log::info('mensaje',['data'=> request()]);
+//            Log::info('mensaje rubenurrieta',['data'=> request()]);
             try {
                 DB::beginTransaction();
                 $rules = [
@@ -126,6 +127,13 @@ class WorkerController extends Controller
                     "company_id" => request("company_id"),
                     "worker_id" => $worker->id
                 ]);
+               if(request("worker_id_replace")){
+                    DB::table("worker_replaces")->updateOrInsert([
+                        "worker_id_replace" => request("worker_id_replace"), //a quien remplaza
+                        "company_id"        => request("company_id"),
+                        "worker_id"         => $worker->id
+                    ]);
+                }
                 DB::commit();
                 return response()->json(["success" => true, "data" => $worker]);
             } catch (\Exception $exception) {
@@ -489,5 +497,25 @@ class WorkerController extends Controller
         return response()->json(["data" => $nameWorkerCenter->name]);
     }
 
+    public function getWorkCompany(Request $request) { //osneida
 
+        $company_id = $request->input('company_id');
+        $workersCompany = Contract::select('workers.id', DB::raw("CONCAT(workers.first_name, ' ', workers.last_name) as name"))
+        ->join('workers', 'contracts.worker_id', '=', 'workers.id')
+        ->where('contracts.company_id', $company_id)
+        ->whereNull('contracts.contract_end_date')
+        ->orderBy('workers.first_name')
+        ->get();
+        return response()->json(["data" => $workersCompany]);
+    }
+
+          //workers-replace
+          public function getWorkerReplaceName($id) { //osneida
+            $workersReplace = WorkerReplace::select('worker_id_replace',DB::raw("CONCAT(workers.first_name, ' ', workers.last_name) as name"))
+            ->join('workers', 'worker_replaces.worker_id_replace', 'workers.id')
+            ->where('worker_replaces.worker_id', $id)
+            ->get();
+    
+            return response()->json(["success" => true, "nombre" => $workersReplace]);
+        }
 }
